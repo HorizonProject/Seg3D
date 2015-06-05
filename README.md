@@ -21,6 +21,8 @@ Table of Contents
 # Seg3D
 Seg3D is a free volume segmentation and processing tool developed by the NIH Center for Integrative Biomedical Computing at the University of Utah Scientific Computing and Imaging (SCI) Institute.
 
+# Horizon
+After cloning Seg3D from this repository, clone the horizon project in the src/Plugins directory.
 
 ## Installing Seg3D from source
 
