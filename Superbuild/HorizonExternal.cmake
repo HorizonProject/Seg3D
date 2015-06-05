@@ -29,7 +29,7 @@ SET_PROPERTY(DIRECTORY PROPERTY "EP_BASE" ${ep_base})
 SET(horizon_GIT_URL "https://aylakhan@bitbucket.org/gveni/horizonsegmentation.git")
 SET(horizon_GIT_TAG "master")
 
-SET(horizon_DIR "${SEG3D_SOURCE_DIR}/Plugins")
+SET(horizon_DIR "${SEG3D_SOURCE_DIR}/Plugins/horizonsegmentation")
 
 # If CMake ever allows overriding the checkout command or adding flags,
 # git checkout -q will silence message about detached head (harmless).
