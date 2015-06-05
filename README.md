@@ -2,6 +2,7 @@ Table of Contents
 =================
 
   * [Seg3D](#seg3d)
+  * [Horizon](#horizon)
     * [Installing Seg3D from source](#installing-seg3d-from-source)
       * [Compiler Requirements](#compiler-requirements)
         * [Windows Vista, 7, 8](#windows-vista-7-8)
