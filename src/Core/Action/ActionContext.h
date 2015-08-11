@@ -160,6 +160,13 @@ public:
   virtual ActionStatus status() const;
   virtual ActionSource source() const;
 
+  // -- Utilities
+public:
+  virtual Core::NotifierHandle get_resource_notifier();
+  virtual void reset_context();
+  virtual Core::ActionResultHandle get_result();
+  virtual std::string get_error_message();
+
   // -- shortcuts for checking status --
 public:
   bool is_success()
@@ -181,9 +188,11 @@ public:
 
   // -- Status information --
 protected:
-
   // The last status report from the action engine
   ActionStatus status_;
+  std::string error_msg_;
+  Core::NotifierHandle notifier_;
+  Core::ActionResultHandle result_;
 };
 
 } // end namespace Core

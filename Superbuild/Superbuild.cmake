@@ -26,11 +26,16 @@
 
 ###########################################
 # TODO: build from archive - Git not used
+###########################################
+
 SET(compress_type "GIT" CACHE INTERNAL "")
 SET(ep_base "${CMAKE_BINARY_DIR}/Externals" CACHE INTERNAL "")
 
+###########################################
 # DETERMINE ARCHITECTURE
 # In order for the code to depend on the architecture settings
+###########################################
+
 IF(CMAKE_SIZEOF_VOID_P MATCHES 8)
   SET(SEG3D_BITS 64)
 ELSE()
@@ -40,6 +45,8 @@ ENDIF()
 ###########################################
 # Set default CMAKE_BUILD_TYPE
 # if empty for Unix Makefile builds
+###########################################
+
 IF(CMAKE_GENERATOR MATCHES "Unix Makefiles" AND NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 ENDIF()
@@ -54,6 +61,8 @@ ENDIF()
 # Configure advanced features:
 #   * large volume (bricked dataset) support
 #   * mosaicing tools
+###########################################
+
 OPTION(BUILD_LARGE_VOLUME_TOOLS "Build with large volume (bricked) dataset support." ON)
 SET(DEFAULT_MOSAIC_SETTING ON)
 IF(WIN32)
@@ -73,19 +82,25 @@ INCLUDE( ExternalProject )
 
 ###########################################
 # Options for console, headless mode
+###########################################
+
 OPTION(BUILD_TESTING "Build with tests." ON)
 
 OPTION(SEG3D_BUILD_INTERFACE "Build the GUI interface to Seg3D" ON)
 IF(WIN32)
-  OPTION(SEG3D_SHOW_CONSOLE "Show console for debugging (Windows only)" OFF)
+  OPTION(SEG3D_SHOW_CONSOLE "Show console for debugging (Windows GUI build only)" OFF)
 ENDIF()
 
 ###########################################
 # Configure python
+###########################################
+
 OPTION(BUILD_WITH_PYTHON "Build with python support." ON)
 
 ###########################################
 # Configure Qt
+###########################################
+
 IF(SEG3D_BUILD_INTERFACE)
   SET(QT_MIN_VERSION "4.6.0")
   INCLUDE(FindQt4)
@@ -99,15 +114,83 @@ IF(SEG3D_BUILD_INTERFACE)
   ELSE()
     MESSAGE(FATAL_ERROR "QT ${QT_MIN_VERSION} or later is required for building the Seg3D GUI")
   ENDIF()
+
+  IF(APPLE)
+    SET(MACDEPLOYQT_OUTPUT_LEVEL 0 CACHE STRING "Set macdeployqt output level (0-3)")
+    MARK_AS_ADVANCED(MACDEPLOYQT_OUTPUT_LEVEL)
+  ENDIF()
+
+ENDIF()
+
+
+###########################################
+# *Nix C++ compiler flags
+###########################################
+
+IF(UNIX)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+  IF(APPLE)
+    SET(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+    SET(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -ftemplate-depth=256")
+    SET(CMAKE_CXX_FLAGS_DEBUG "-Wshorten-64-to-32 ${CMAKE_CXX_FLAGS_DEBUG}")
+  ELSE()
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+  ENDIF()
 ENDIF()
 
 ###########################################
-# Configure Doxygen documentation
+# Microsoft VC compiler flags
+###########################################
+
+IF(WIN32 AND MSVC)
+  ADD_DEFINITIONS(-D_ALLOW_KEYWORD_MACROS)
+  # upgrade these to Windows Vista...
+  ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501 -DNTDDI_VERSION=0x05010000)
+  ADD_DEFINITIONS(-DPSAPI_VERSION=1)
+  # Disable Visual C++ Secure Warnings
+  ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS)
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+  ADD_DEFINITIONS(-D_BIND_TO_CURRENT_VCLIBS_VERSION=1)
+  ADD_DEFINITIONS(-D_BIND_TO_CURRENT_CRT_VERSION=1)
+  # Enable Intrinsic Functions
+  SET(CMAKE_CXX_FLAGS "/Oi ${CMAKE_CXX_FLAGS}")
+  # Build with multiple processes -- speeds up compilation on multi-processor machines.
+  SET(CMAKE_CXX_FLAGS "/MP ${CMAKE_CXX_FLAGS}")
+ENDIF()
+
+
+###########################################
+# Configure LaTeX and Doxygen documentation
+###########################################
+
 OPTION(BUILD_DOCUMENTATION "Build documentation" OFF)
 MARK_AS_ADVANCED(BUILD_DOCUMENTATION)
 
+FIND_PACKAGE(LATEX)
+
+IF(BUILD_DOCUMENTATION AND NOT PDFLATEX_COMPILER)
+  MESSAGE(WARNING "LaTeX compiler not found. Disabling documentation build.")
+  SET(BUILD_DOCUMENTATION OFF)
+ENDIF()
+
+IF(BUILD_DOCUMENTATION)
+  OPTION(BUILD_DOXYGEN_DOCUMENTATION "Generate doxygen-based documentation." OFF)
+  MARK_AS_ADVANCED(BUILD_DOXYGEN_DOCUMENTATION)
+
+  IF(BUILD_DOXYGEN_DOCUMENTATION)
+    FIND_PACKAGE(Doxygen)
+
+    IF(NOT DOXYGEN_FOUND)
+      MESSAGE(WARNING "Doxygen not found. Disabling Doxygen documentation build.")
+      SET(BUILD_DOXYGEN_DOCUMENTATION OFF CACHE BOOL "Generate doxygen-based documentation." FORCE)
+    ENDIF()
+  ENDIF()
+ENDIF()
+
 ###########################################
 # Configure externals
+###########################################
 
 OPTION(BUILD_RELEASE "Horizon tool release build." OFF)
 MARK_AS_ADVANCED(BUILD_RELEASE)
@@ -161,12 +244,17 @@ LIST(APPEND Seg3D_DEPENDENCIES Data_external)
 SET(SEG3D_CACHE_ARGS
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=${CMAKE_VERBOSE_MAKEFILE}"
     "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
+    "-DSEG3D_SOURCE_DIR:PATH=${SEG3D_SOURCE_DIR}"
     "-DSEG3D_BINARY_DIR:PATH=${SEG3D_BINARY_DIR}"
     "-DBUILD_LARGE_VOLUME_TOOLS:BOOL=${BUILD_LARGE_VOLUME_TOOLS}"
     "-DBUILD_MOSAIC_TOOLS:BOOL=${BUILD_MOSAIC_TOOLS}"
     "-DSEG3D_BITS:STRING=${SEG3D_BITS}"
     "-DBUILD_TESTING:BOOL=${BUILD_TESTING}"
-    "-DBUILD_DOCUMENTATION:BOOL=${BUILD_DOCUMENTATION}"
+    "-DTEST_INPUT_PATH:PATH=${TEST_INPUT_PATH}"
+    "-DCMAKE_CXX_FLAGS:STATIC=${CMAKE_CXX_FLAGS}"
+    "-DCMAKE_CXX_FLAGS_DEBUG:STATIC=${CMAKE_CXX_FLAGS_DEBUG}"
+    "-DCMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD:STATIC=${CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD}"
+    "-DCMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY:STATIC=${CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY}"
     "-DSEG3D_BUILD_INTERFACE:BOOL=${SEG3D_BUILD_INTERFACE}"
     "-DSEG3D_SHOW_CONSOLE:BOOL=${SEG3D_SHOW_CONSOLE}"
     "-DBUILD_WITH_PYTHON:BOOL=${BUILD_WITH_PYTHON}"
@@ -182,15 +270,27 @@ SET(SEG3D_CACHE_ARGS
 )
 
 IF(BUILD_WITH_PYTHON)
+  # python executable will be release version in IDE builds
   LIST(APPEND SEG3D_CACHE_ARGS
     "-DPython_DIR:PATH=${Python_DIR}"
     "-DPYTHON_EXECUTABLE:FILEPATH=${SCI_PYTHON_EXE}"
   )
 ENDIF()
 
+IF(BUILD_DOCUMENTATION)
+  LIST(APPEND SEG3D_CACHE_ARGS
+    "-DBUILD_DOCUMENTATION:BOOL=${BUILD_DOCUMENTATION}"
+    "-DBUILD_DOXYGEN_DOCUMENTATION:BOOL=${BUILD_DOXYGEN_DOCUMENTATION}"
+    "-DPDFLATEX_COMPILER:FILEPATH=${PDFLATEX_COMPILER}"
+    "-DBIBTEX_COMPILER:FILEPATH=${BIBTEX_COMPILER}"
+    "-DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE}"
+  )
+ENDIF()
+
 IF(SEG3D_BUILD_INTERFACE)
   LIST(APPEND SEG3D_CACHE_ARGS
     "-DQT_QMAKE_EXECUTABLE:FILEPATH=${QT_QMAKE_EXECUTABLE}"
+    "-DMACDEPLOYQT_OUTPUT_LEVEL:STRING=${MACDEPLOYQT_OUTPUT_LEVEL}"
   )
 ENDIF()
 

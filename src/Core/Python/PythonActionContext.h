@@ -78,21 +78,12 @@ public:
   virtual void report_need_resource( Core::NotifierHandle notifier );
   virtual Core::ActionSource source() const;
 
-public:
-  Core::NotifierHandle get_resource_notifier();
-  void reset_context();
-  Core::ActionResultHandle get_result();
-  std::string get_error_message();
-
 private:
   friend class PythonInterpreter;
   void set_action_mode( PythonActionMode mode );
 
 private:
   PythonActionMode action_mode_;
-  std::string error_msg_;
-  Core::NotifierHandle notifier_;
-  Core::ActionResultHandle result_;
 };
 
 } //end namespace Core

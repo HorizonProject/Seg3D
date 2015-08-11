@@ -3,7 +3,7 @@
  
  The MIT License
  
- Copyright (c) 2009 Scientific Computing and Imaging Institute,
+ Copyright (c) 2015 Scientific Computing and Imaging Institute,
  University of Utah.
  
  
@@ -24,7 +24,7 @@
  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  DEALINGS IN THE SOFTWARE.
- */
+*/
 
 //Boost Includes
 #include <boost/lambda/lambda.hpp>
@@ -44,6 +44,7 @@
 //Core Includes - for logging
 #include <Core/Utils/Log.h>
 #include <Core/State/Actions/ActionSet.h>
+#include <Core/Isosurface/Isosurface.h>
 
 //QtUtils Includes
 #include <QtUtils/Bridge/QtBridge.h>
@@ -64,6 +65,7 @@
 #include <Application/Layer/Actions/ActionMoveLayer.h>
 #include <Application/Layer/Actions/ActionCalculateMaskVolume.h>
 #include <Application/Layer/Actions/ActionDuplicateLayer.h>
+#include <Application/LayerIO/LayerIO.h>
 #include <Application/LayerIO/Actions/ActionExportLayer.h>
 #include <Application/LayerIO/Actions/ActionExportSegmentation.h>
 #include <Application/LayerIO/Actions/ActionExportIsosurface.h>
@@ -243,32 +245,32 @@ void LayerWidgetPrivate::update_appearance( bool locked, bool active, bool in_us
     this->ui_.base_->setStyleSheet( StyleSheet::LAYER_WIDGET_BASE_LOCKED_C );
     this->ui_.label_->setStyleSheet( StyleSheet::LAYER_WIDGET_LABEL_LOCKED_C ); 
   }
-  else if( active && !in_use )
+  else if ( active && ! in_use )
   {
     this->ui_.base_->setStyleSheet( StyleSheet::LAYER_WIDGET_BASE_ACTIVE_C );  
     this->ui_.label_->setStyleSheet( StyleSheet::LAYER_WIDGET_LABEL_ACTIVE_C );
-    if( this->layer_->gui_state_group_->get_enabled() )
+    if ( this->layer_->gui_state_group_->get_enabled() )
       this->ui_.header_->setStyleSheet( StyleSheet::LAYER_WIDGET_HEADER_ACTIVE_C );
   }
-  else if( active && in_use )
+  else if ( active && in_use )
   {
     this->ui_.base_->setStyleSheet( StyleSheet::LAYER_WIDGET_BASE_ACTIVE_IN_USE_C );  
     this->ui_.label_->setStyleSheet( StyleSheet::LAYER_WIDGET_LABEL_ACTIVE_IN_USE_C );
-    if( this->layer_->gui_state_group_->get_enabled() )
+    if ( this->layer_->gui_state_group_->get_enabled() )
       this->ui_.header_->setStyleSheet( StyleSheet::LAYER_WIDGET_HEADER_ACTIVE_IN_USE_C );
   }
   else if ( in_use )
   {
     this->ui_.base_->setStyleSheet( StyleSheet::LAYER_WIDGET_BASE_IN_USE_C );  
     this->ui_.label_->setStyleSheet( StyleSheet::LAYER_WIDGET_LABEL_IN_USE_C );
-    if( this->layer_->gui_state_group_->get_enabled() )
+    if ( this->layer_->gui_state_group_->get_enabled() )
       this->ui_.header_->setStyleSheet( StyleSheet::LAYER_WIDGET_HEADER_IN_USE_C );
   }
   else
   {
     this->ui_.base_->setStyleSheet( StyleSheet::LAYER_WIDGET_BASE_INACTIVE_C );
     this->ui_.label_->setStyleSheet( StyleSheet::LAYER_WIDGET_LABEL_INACTIVE_C );
-    if( this->layer_->gui_state_group_->get_enabled() )
+    if ( this->layer_->gui_state_group_->get_enabled() )
       this->ui_.header_->setStyleSheet( StyleSheet::LAYER_WIDGET_HEADER_INACTIVE_C );
   }
 }
@@ -350,7 +352,7 @@ void LayerWidgetPrivate::enable_drop_space( bool drop )
   // Ignore if the widget is currently being dragged
   if ( this->picked_up_ ) return;
   
-  if( drop )
+  if ( drop )
   {
     this->overlay_->set_transparent( true );
     this->overlay_->show();
@@ -374,13 +376,14 @@ void LayerWidgetPrivate::export_layer( const std::string& type_extension )
   QString export_path = QFileDialog::getExistingDirectory( this->parent_, tr( "Choose Directory for Export..." ),
     current_folder.string().c_str(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks );
 
-  if( export_path == "" ) return;
+  if ( export_path.isEmpty() ) return;
 
-  if( !QFileInfo( export_path ).exists() )
+  if ( ! QFileInfo( export_path ).exists() )
   {
     CORE_LOG_ERROR( "The layer could not be exported to that location. Please try another location." );
     return;
   }
+
   try
   {
     boost::filesystem::create_directory( boost::filesystem::path( export_path.toStdString() ) / "delete_me" );
@@ -394,13 +397,13 @@ void LayerWidgetPrivate::export_layer( const std::string& type_extension )
   // if we've made it here then we've created a folder and we need to delete it.
   boost::filesystem::remove(  boost::filesystem::path( export_path.toStdString() ) / "delete_me" );
 
-  if( this->get_volume_type() == Core::VolumeType::MASK_E )
+  if ( this->get_volume_type() == Core::VolumeType::MASK_E )
   {
-    ActionExportSegmentation::Dispatch( Core::Interface::GetWidgetActionContext(), 
-      this->layer_->get_layer_id(), "single_mask", 
+    ActionExportSegmentation::Dispatch( Core::Interface::GetWidgetActionContext(),
+      this->layer_->get_layer_id(), LayerIO::SINGLE_MASK_MODE_C,
       export_path.toStdString(), type_extension );
   }
-  else if( this->get_volume_type() == Core::VolumeType::DATA_E )
+  else if ( this->get_volume_type() == Core::VolumeType::DATA_E )
   { 
     std::string file_name = ( boost::filesystem::path( export_path.toStdString() ) / 
       this->layer_->get_layer_name() ).string();
@@ -415,8 +418,7 @@ void LayerWidgetPrivate::export_isosurface()
 {
 
   MaskLayer* mask_layer = dynamic_cast< MaskLayer* >( this->layer_.get() );
-
-  if( !mask_layer->iso_generated_state_->get() )
+  if ( ! mask_layer->iso_generated_state_->get() )
   {
     QMessageBox message_box;
     message_box.setWindowTitle( "Export Isosurface Error" );
@@ -431,9 +433,8 @@ void LayerWidgetPrivate::export_isosurface()
   boost::filesystem::path current_folder = ProjectManager::Instance()->get_current_file_folder();  
 
   filename = QFileDialog::getSaveFileName( this->parent_,
-                                           tr("Export Isosurface As... "),
-                                           current_folder.string().c_str(),
-                                           tr("VTK (*.vtk);;ASCII (*.fac *.pts *.val);;STL (*.stl)") );
+    tr("Export Isosurface As... "), QString::fromStdString( current_folder.string() ),
+    QString::fromStdString( Core::Isosurface::EXPORT_FORMATS_C ) );
 
   if ( filename.isEmpty() ) return;
 
@@ -1401,10 +1402,10 @@ void LayerWidget::contextMenuEvent( QContextMenuEvent * event )
 
     if ( this->private_->layer_->get_type() == Core::VolumeType::MASK_E )
     {
-    export_menu->setTitle( tr( "Export Segmentation As..." ) );
-    
-    qaction = export_menu->addAction( tr( "BITMAP" ) );
-    connect( qaction, SIGNAL( triggered() ), this, SLOT( export_bitmap() ) );
+      export_menu->setTitle( tr( "Export Segmentation As..." ) );
+
+      qaction = export_menu->addAction( tr( "BITMAP" ) );
+      connect( qaction, SIGNAL( triggered() ), this, SLOT( export_bitmap() ) );
     }
 
     qaction = export_menu->addAction( tr( "NRRD" ) );
@@ -1427,8 +1428,12 @@ void LayerWidget::contextMenuEvent( QContextMenuEvent * event )
 
   if ( this->private_->layer_->get_type() == Core::VolumeType::MASK_E )
   {
-    QAction *qaction = menu.addAction( tr( "Export Isosurface..." ) );
-    connect( qaction, SIGNAL( triggered() ), this, SLOT( export_isosurface() ) );
+    MaskLayer* mask_layer = dynamic_cast< MaskLayer* >( this->private_->layer_.get() );
+    if ( mask_layer->iso_generated_state_->get() )
+    {
+      QAction *qaction = menu.addAction( tr( "Export Isosurface..." ) );
+      connect( qaction, SIGNAL( triggered() ), this, SLOT( export_isosurface() ) );
+    }
   }
 
   menu.exec( event->globalPos() );

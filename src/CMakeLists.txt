@@ -47,7 +47,7 @@ ENDIF()
 PROJECT(Seg3D)
 
 ###########################################
-# WHERE TO COMPILE EXECUTABLES
+# Where to compile executables
 ###########################################
 
 IF(NOT SEG3D_BINARY_DIR)
@@ -87,7 +87,7 @@ ENDIF()
 
 SET(SEG3D_MAJOR_VERSION 2 CACHE INTERNAL "Major version number" FORCE)
 SET(SEG3D_MINOR_VERSION 2 CACHE INTERNAL "Minor version number" FORCE)
-SET(SEG3D_PATCH_VERSION 0 CACHE INTERNAL "Patch version number" FORCE)
+SET(SEG3D_PATCH_VERSION 1 CACHE INTERNAL "Patch version number" FORCE)
 
 
 ###########################################
@@ -128,6 +128,14 @@ ELSE()
   SET(MSVC90_BUILD "x86")
   ADD_DEFINITIONS(-DSCI_32BITS)
 ENDIF()
+
+
+###########################################
+# Where to install command line tools, docs
+# and other extras on OS X
+###########################################
+
+SET(OSX_UTILS_DIR "Seg3DUtils")
 
 
 ############################################
@@ -207,41 +215,6 @@ ADD_DEFINITIONS(-DTIXML_USE_STL)
 
 
 ###########################################
-# *Nix C++ compiler flags
-###########################################
-
-IF(UNIX)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-  IF(APPLE)
-    SET(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
-    SET(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -ftemplate-depth=256")
-    SET(CMAKE_CXX_FLAGS_DEBUG "-Wshorten-64-to-32 ${CMAKE_CXX_FLAGS_DEBUG}")
-  ELSE()
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
-  ENDIF()
-ENDIF()
-
-###########################################
-# Microsoft VC compiler flags
-###########################################
-
-IF(WIN32 AND MSVC)
-  ADD_DEFINITIONS(-D_ALLOW_KEYWORD_MACROS)
-  ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501 -DNTDDI_VERSION=0x05010000)
-  ADD_DEFINITIONS(-DPSAPI_VERSION=1)
-  # Disable Visual C++ Secure Warnings
-  ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS)
-  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-  ADD_DEFINITIONS(-D_BIND_TO_CURRENT_VCLIBS_VERSION=1)
-  ADD_DEFINITIONS(-D_BIND_TO_CURRENT_CRT_VERSION=1)
-  # Enable Intrinsic Functions
-  SET(CMAKE_CXX_FLAGS "/Oi ${CMAKE_CXX_FLAGS}")
-  # Build with multiple processes -- speeds up compilation on multi-processor machines.
-  SET(CMAKE_CXX_FLAGS "/MP ${CMAKE_CXX_FLAGS}") 
-ENDIF()
-
-###########################################
 # RPATH settings for Linux
 ###########################################
 
@@ -284,9 +257,6 @@ IF(SEG3D_BUILD_INTERFACE)
     ENDIF()
     SET(MACDEPLOYQT ${MACDEPLOYQT_EXE} CACHE INTERNAL "macdeployqt executable")
     MARK_AS_ADVANCED(MACDEPLOYQT)
-
-    SET(MACDEPLOYQT_OUTPUT_LEVEL 0 CACHE STRING "Set macdeployqt output level (0-3)")
-    MARK_AS_ADVANCED(MACDEPLOYQT_OUTPUT_LEVEL)
   ENDIF()
 
 ENDIF()
@@ -495,6 +465,7 @@ ENDIF()
 MESSAGE(STATUS "Configuring Seg3D registered functions")
 GENERATE_REGISTRATION_FILES()
 
+
 ###########################################
 # Generate the python functions registration file
 ###########################################
@@ -504,6 +475,20 @@ IF(BUILD_WITH_PYTHON)
   GENERATE_ACTION_PYTHON_WRAPPER_REGISTRATION_FILE()
 ENDIF()
 
+
+###########################################
+# Configure LaTeX and Doxygen documentation
+###########################################
+
+IF(BUILD_DOCUMENTATION)
+  ADD_SUBDIRECTORY(Documentation)
+ENDIF()
+
+IF(BUILD_DOXYGEN_DOCUMENTATION)
+  ADD_SUBDIRECTORY(Documentation/Doxygen)
+ENDIF()
+
+
 ###########################################
 # Bootstrap
 # Add code for packaging shaders and other
@@ -511,33 +496,6 @@ ENDIF()
 ###########################################
 
 ADD_SUBDIRECTORY(Bootstrap)
-
-###########################################
-# Configure LaTeX and Doxygen documentation
-###########################################
-
-FIND_PACKAGE(LATEX)
-
-IF(PDFLATEX_COMPILER)
-  IF(BUILD_DOCUMENTATION)
-    ADD_SUBDIRECTORY(Documentation)
-  ENDIF()
-ENDIF()
-
-IF(BUILD_DOCUMENTATION)
-  OPTION(BUILD_DOXYGEN_DOCUMENTATION "Generate doxygen-based documentation." OFF)
-  MARK_AS_ADVANCED(BUILD_DOXYGEN_DOCUMENTATION)
-
-  IF(BUILD_DOXYGEN_DOCUMENTATION)
-    FIND_PACKAGE(Doxygen)
-
-    IF(DOXYGEN_FOUND)
-      ADD_SUBDIRECTORY(Documentation/Doxygen)
-    ELSE()
-      SET(BUILD_DOXYGEN_DOCUMENTATION OFF CACHE BOOL "Generate doxygen-based documentation." FORCE)
-    ENDIF()
-  ENDIF()
-ENDIF()
 
 
 ###########################################

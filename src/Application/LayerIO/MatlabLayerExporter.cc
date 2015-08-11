@@ -125,20 +125,20 @@ bool MatlabLayerExporter::export_layer( const std::string& mode, const std::stri
   const std::string& name )
 {
   boost::filesystem::path path = boost::filesystem::path( file_path ) / ( name + ".mat" );
-  bool success;
+  bool success = false;
   
     // Export data as single volume file
-  if ( mode == "data" )
+  if ( mode == LayerIO::DATA_MODE_C )
   {
     success = this->export_matfile( path.string() );
   }
     // Export data as separate files
-  else if ( mode == "single_mask" )
+  else if ( mode == LayerIO::SINGLE_MASK_MODE_C )
   {
     success = this->export_single_masks( file_path );
   }
     // Export data as a single file
-  else if ( mode == "label_mask" )
+  else if ( mode == LayerIO::LABEL_MASK_MODE_C )
   {
     success = this->export_mask_label( path.string() );
   }

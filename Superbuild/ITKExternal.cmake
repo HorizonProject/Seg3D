@@ -26,18 +26,6 @@
 
 SET_PROPERTY(DIRECTORY PROPERTY "EP_BASE" ${ep_base})
 
-IF(UNIX)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-  IF(APPLE)
-    SET(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
-    SET(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -ftemplate-depth=256")
-    SET(CMAKE_CXX_FLAGS_DEBUG "-Wshorten-64-to-32 ${CMAKE_CXX_FLAGS_DEBUG}")
-  ELSE()
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
-  ENDIF()
-ENDIF()
-
 SET(itk_ARGS
   "-DBUILD_SHARED_LIBS:BOOL=OFF"
   "-DITK_BUILD_SHARED_LIBS:BOOL=OFF"
@@ -74,7 +62,7 @@ IF(BUILD_MOSAIC_TOOLS)
   )
 ENDIF()
 
-SET(itk_GIT_TAG "origin/seg3d_external_test")
+SET(itk_GIT_TAG "origin/vtkio_fix")
 
 # If CMake ever allows overriding the checkout command or adding flags,
 # git checkout -q will silence message about detached head (harmless).
