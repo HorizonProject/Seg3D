@@ -981,4 +981,13 @@ const QString StyleSheet::PROVENANCE_LIST_HEADER_C = QString::fromUtf8(
   "}"
 );
 
+const QString StyleSheet::TAB_WIDGET_C = QString::fromUtf8(
+"QTabWidget::tab{"
+  " font: bold;"
+#ifdef __APPLE__
+  "   font-size: 13;"
+#endif
+  "}"
+);
+
 }  // end namespace Seg3D

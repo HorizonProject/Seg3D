@@ -142,7 +142,9 @@ public:
     const static QString PROVENANCE_LIST_HEADER_C;
     
     const static QString LAYERIO_C;
-    
+
+    const static QString TAB_WIDGET_C;
+
 };    
 
 }  // end namespace Seg3D
