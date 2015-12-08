@@ -982,10 +982,12 @@ const QString StyleSheet::PROVENANCE_LIST_HEADER_C = QString::fromUtf8(
 );
 
 const QString StyleSheet::TAB_WIDGET_C = QString::fromUtf8(
-"QTabWidget::tab{"
+"QTabWidget{"
   " font: bold;"
 #ifdef __APPLE__
   "   font-size: 13;"
+#else
+  "   font-size: 10;"
 #endif
   "}"
 );
